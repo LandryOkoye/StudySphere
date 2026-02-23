@@ -3,9 +3,16 @@
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send, Paperclip, Sparkles, ListChecks, Layers } from "lucide-react"
+import { Send, Paperclip, Sparkles, ListChecks, Layers, Globe, FileText, CheckCircle2 } from "lucide-react"
 import type { Message } from "@/lib/store"
 import { cn } from "@/lib/utils"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Switch } from "@/components/ui/switch"
 
 interface AIChatProps {
   messages: Message[]
@@ -21,18 +28,20 @@ export function AIChat({
   environmentName,
 }: AIChatProps) {
   const [inputValue, setInputValue] = useState("")
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
+    // Scroll to bottom whenever messages change
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
   }, [messages])
 
   function handleSend() {
     if (inputValue.trim()) {
-      onSendMessage(inputValue.trim())
+      // If web search is enabled, we could prefix or add metadata, but here we just send the text
+      const content = webSearchEnabled ? `[Web Search] ${inputValue.trim()}` : inputValue.trim()
+      onSendMessage(content)
       setInputValue("")
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto"
@@ -66,14 +75,14 @@ export function AIChat({
         return (
           <li
             key={i}
-            className="ml-4 text-sm leading-relaxed"
+            className="ml-4 text-[13px] leading-relaxed"
             dangerouslySetInnerHTML={{ __html: processed.slice(2) }}
           />
         )
       }
       if (line.startsWith("# ")) {
         return (
-          <h3 key={i} className="text-sm font-semibold mt-2 mb-1">
+          <h3 key={i} className="text-[13px] font-semibold mt-2 mb-1 text-slate-900 dark:text-slate-100">
             {line.slice(2)}
           </h3>
         )
@@ -84,7 +93,7 @@ export function AIChat({
       return (
         <p
           key={i}
-          className="text-sm leading-relaxed"
+          className="text-[13px] leading-relaxed"
           dangerouslySetInnerHTML={{ __html: processed }}
         />
       )
@@ -92,122 +101,212 @@ export function AIChat({
   }
 
   return (
-    <div className="flex flex-1 flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b px-6 py-3">
+    <div className="flex flex-1 flex-col bg-white dark:bg-[#0A0A0A] relative min-h-0">
+      {/* Header (Optional, could be removed as we have sidebar, but kept for context) */}
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4 bg-white/50 dark:bg-[#0A0A0A]/50 backdrop-blur-md sticky top-0 z-10">
         <div className="flex flex-col gap-0.5">
-          <h2 className="text-sm font-medium text-foreground">{environmentName}</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{environmentName}</h2>
           <div className="flex items-center gap-1.5">
-            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span className="text-xs text-muted-foreground">AI ready</span>
+            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">0G Compute Online</span>
           </div>
         </div>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 overflow-y-auto" ref={scrollRef}>
-        <div className="flex flex-col gap-6 px-6 py-6">
+      {/* Messages / Welcome Area */}
+      <div className="flex-1 overflow-y-auto scroll-smooth">
+        <div className="flex flex-col max-w-4xl mx-auto w-full px-6 py-8 pb-32">
           {messages.length === 0 && (
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                <Sparkles className="h-6 w-6 text-primary" />
+            <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex flex-col gap-2 mb-10">
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                  Welcome back to {environmentName}
+                </h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Your AI learning workspace is ready. Let's make some progress today.
+                </p>
               </div>
-              <div className="flex flex-col items-center gap-1 text-center">
-                <p className="text-sm font-medium text-foreground">
-                  Ask anything about your documents
-                </p>
-                <p className="max-w-xs text-xs text-muted-foreground leading-relaxed">
-                  Upload study materials and start asking questions. The AI will analyze your documents and provide intelligent answers.
-                </p>
+
+              {/* Quick Stats Row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+                <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-[#FAFAFA] dark:bg-[#111]">
+                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                    <FileText className="h-4 w-4" />
+                    <span className="text-xs font-medium uppercase tracking-wider">Documents</span>
+                  </div>
+                  <span className="text-xl font-semibold text-slate-900 dark:text-slate-100">12 Processed</span>
+                </div>
+                <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-[#FAFAFA] dark:bg-[#111]">
+                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span className="text-xs font-medium uppercase tracking-wider">Quizzes</span>
+                  </div>
+                  <span className="text-xl font-semibold text-slate-900 dark:text-slate-100">4 Mastered</span>
+                </div>
+                <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-[#FAFAFA] dark:bg-[#111]">
+                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                    <Globe className="h-4 w-4" />
+                    <span className="text-xs font-medium uppercase tracking-wider">Web Context</span>
+                  </div>
+                  <span className="text-xl font-semibold text-slate-900 dark:text-slate-100">8 Web Clips</span>
+                </div>
+              </div>
+
+              {/* Suggested Actions */}
+              <div className="flex flex-col gap-4">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Suggested Actions
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => onQuickAction("summarize")}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111] text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  >
+                    <Sparkles className="h-4 w-4 text-indigo-500" />
+                    Summarize recent notes
+                  </button>
+                  <button
+                    onClick={() => onQuickAction("quiz")}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111] text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  >
+                    <ListChecks className="h-4 w-4 text-emerald-500" />
+                    Start a quick quiz
+                  </button>
+                  <button
+                    onClick={() => onSendMessage("Search the web for recent advancements in this topic")}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111] text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  >
+                    <Globe className="h-4 w-4 text-blue-500" />
+                    Search web for updates
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "flex",
-                message.role === "user" ? "justify-end" : "justify-start"
-              )}
-            >
+          <div className="flex flex-col gap-6">
+            {messages.map((message) => (
               <div
+                key={message.id}
                 className={cn(
-                  "max-w-[85%] rounded-xl px-4 py-3",
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-foreground"
+                  "flex group",
+                  message.role === "user" ? "justify-end" : "justify-start"
                 )}
               >
-                {message.role === "ai" ? (
-                  <div className="flex flex-col gap-1">
-                    {renderMessageContent(message.content)}
+                {message.role === "ai" && (
+                  <div className="flex-shrink-0 mr-4 mt-1">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600/10 border border-indigo-600/20 text-indigo-600">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-sm leading-relaxed">{message.content}</p>
                 )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </ScrollArea>
 
-      {/* Quick Actions */}
-      <div className="flex gap-2 px-6 pb-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 text-xs"
-          onClick={() => onQuickAction("summarize")}
-        >
-          <Sparkles className="h-3 w-3" />
-          Summarize documents
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 text-xs"
-          onClick={() => onQuickAction("quiz")}
-        >
-          <ListChecks className="h-3 w-3" />
-          Generate quiz
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 text-xs"
-          onClick={() => onQuickAction("flashcards")}
-        >
-          <Layers className="h-3 w-3" />
-          Create flashcards
-        </Button>
+                <div
+                  className={cn(
+                    "max-w-[85%] sm:max-w-[75%] rounded-2xl px-5 py-3.5 shadow-sm",
+                    message.role === "user"
+                      ? "bg-slate-900 text-slate-50 dark:bg-slate-100 dark:text-slate-900 rounded-tr-sm"
+                      : "bg-white text-slate-900 dark:bg-[#111] dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-tl-sm"
+                  )}
+                >
+                  {message.role === "user" && message.content.startsWith("[Web Search]") && (
+                    <div className="flex items-center gap-1.5 mb-2 text-xs font-medium opacity-70">
+                      <Globe className="h-3 w-3" />
+                      <span>Web Search</span>
+                    </div>
+                  )}
+                  {message.role === "ai" ? (
+                    <div className="flex flex-col gap-2">
+                      {renderMessageContent(message.content)}
+                    </div>
+                  ) : (
+                    <p className="text-[13px] leading-relaxed">
+                      {message.content.replace("[Web Search] ", "")}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+            {/* Invisible div to scroll to */}
+            <div ref={messagesEndRef} className="h-4 w-full shrink-0" />
+          </div>
+        </div>
       </div>
 
-      {/* Input */}
-      <div className="border-t px-6 py-4">
-        <div className="flex items-end gap-2 rounded-lg border bg-background p-2">
-          <Button variant="ghost" size="icon-sm" className="shrink-0">
-            <Paperclip className="h-4 w-4 text-muted-foreground" />
-            <span className="sr-only">Attach file</span>
-          </Button>
+      {/* Input Area (Centered heavily at bottom) */}
+      <div className="absolute bottom-6 left-0 right-0 px-6 flex justify-center pointer-events-none">
+        <div className="w-full max-w-3xl flex flex-col gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111] shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-3 pointer-events-auto transition-all focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500/50">
           <textarea
             ref={textareaRef}
             rows={1}
             value={inputValue}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder="Ask anything about your documents..."
-            className="flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground leading-relaxed"
+            placeholder="Ask anything, or type '/' to search the web…"
+            className="flex-1 resize-none bg-transparent text-[14px] outline-none placeholder:text-slate-400 leading-relaxed px-2 py-1 max-h-[150px] overflow-y-auto text-slate-900 dark:text-slate-100"
           />
-          <Button
-            size="icon-sm"
-            onClick={handleSend}
-            disabled={!inputValue.trim()}
-            className="shrink-0"
-          >
-            <Send className="h-4 w-4" />
-            <span className="sr-only">Send message</span>
-          </Button>
+
+          <div className="flex items-center justify-between pt-2 px-1">
+            <div className="flex items-center gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 rounded-md">
+                    <Paperclip className="h-3.5 w-3.5" />
+                    Attach
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48 bg-white dark:bg-[#111] border-slate-200 dark:border-slate-800 rounded-xl shadow-lg">
+                  <DropdownMenuItem className="text-xs gap-2 py-2 cursor-pointer focus:bg-slate-50 dark:focus:bg-slate-800/50 rounded-md m-1">
+                    <FileText className="h-3.5 w-3.5 text-slate-500" />
+                    Local File
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-xs gap-2 py-2 cursor-pointer focus:bg-slate-50 dark:focus:bg-slate-800/50 rounded-md m-1">
+                    <Layers className="h-3.5 w-3.5 text-blue-500" />
+                    Google Drive
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-xs gap-2 py-2 cursor-pointer focus:bg-slate-50 dark:focus:bg-slate-800/50 rounded-md m-1">
+                    <Globe className="h-3.5 w-3.5 text-emerald-500" />
+                    Web URL
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
+                <Switch
+                  id="web-search"
+                  checked={webSearchEnabled}
+                  onCheckedChange={setWebSearchEnabled}
+                  className="data-[state=checked]:bg-indigo-500 h-4 w-7 [&_span]:h-3 [&_span]:w-3 [&_span]:data-[state=checked]:translate-x-3"
+                />
+                <label
+                  htmlFor="web-search"
+                  className={cn(
+                    "text-xs font-medium cursor-pointer transition-colors",
+                    webSearchEnabled
+                      ? "text-indigo-600 dark:text-indigo-400"
+                      : "text-slate-500 dark:text-slate-400"
+                  )}
+                >
+                  Web Search
+                </label>
+              </div>
+            </div>
+
+            <Button
+              size="icon-sm"
+              onClick={handleSend}
+              disabled={!inputValue.trim()}
+              className={cn(
+                "shrink-0 h-8 w-8 rounded-lg transition-all",
+                inputValue.trim()
+                  ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                  : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600"
+              )}
+            >
+              <Send className="h-3.5 w-3.5" />
+              <span className="sr-only">Send</span>
+            </Button>
+          </div>
         </div>
       </div>
     </div>

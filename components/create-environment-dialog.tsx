@@ -17,9 +17,10 @@ import { Plus } from "lucide-react"
 
 interface CreateEnvironmentDialogProps {
   onCreateEnvironment: (name: string) => void
+  children?: React.ReactNode
 }
 
-export function CreateEnvironmentDialog({ onCreateEnvironment }: CreateEnvironmentDialogProps) {
+export function CreateEnvironmentDialog({ onCreateEnvironment, children }: CreateEnvironmentDialogProps) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
 
@@ -34,10 +35,12 @@ export function CreateEnvironmentDialog({ onCreateEnvironment }: CreateEnvironme
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-2">
-          <Plus className="h-4 w-4" />
-          Create Environment
-        </Button>
+        {children || (
+          <Button size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Create Environment
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -59,10 +62,10 @@ export function CreateEnvironmentDialog({ onCreateEnvironment }: CreateEnvironme
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)} className="rounded-lg">
             Cancel
           </Button>
-          <Button onClick={handleCreate} disabled={!name.trim()}>
+          <Button onClick={handleCreate} disabled={!name.trim()} className="bg-slate-900 text-white hover:bg-slate-800 rounded-lg">
             Create
           </Button>
         </DialogFooter>

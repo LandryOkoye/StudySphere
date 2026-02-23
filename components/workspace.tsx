@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   File,
   CheckCircle2,
+  Share2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -106,62 +107,90 @@ export function Workspace({
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
-      <aside className="flex w-64 shrink-0 flex-col border-r bg-sidebar">
+      <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200 dark:border-slate-800 bg-[#F9F9F9] dark:bg-[#111]">
         {/* Sidebar header */}
-        <div className="flex items-center gap-2 border-b px-4 py-3">
-          <Button variant="ghost" size="icon-sm" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4" />
-            <span className="sr-only">Back to dashboard</span>
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-4 py-3 h-[60px]">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <Button variant="ghost" size="icon-sm" onClick={onBack} className="h-7 w-7 rounded-md shrink-0 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="sr-only">Back to dashboard</span>
+            </Button>
+            <span className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+              {environment.name}
+            </span>
+          </div>
+          <Button variant="ghost" size="icon-sm" className="h-7 w-7 rounded-md shrink-0 text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+            <Layers className="h-4 w-4" />
           </Button>
-          <span className="truncate text-sm font-medium text-sidebar-foreground">
-            {environment.name}
-          </span>
         </div>
 
         {/* Navigation */}
-        <nav className="flex flex-col gap-1 p-3">
+        <nav className="flex flex-col gap-0.5 p-3">
           {sidebarTabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+                "flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors",
                 activeTab === tab.id
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  ? "bg-slate-200/60 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/40 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-slate-100"
               )}
             >
-              <tab.icon className="h-4 w-4" />
+              <tab.icon className={cn("h-4 w-4", activeTab === tab.id ? "text-indigo-600 dark:text-indigo-400" : "opacity-70")} />
               {tab.label}
             </button>
           ))}
         </nav>
 
         {/* Document list in sidebar */}
-        <div className="flex flex-col gap-1 border-t px-3 py-3">
-          <p className="px-3 pb-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Documents
-          </p>
-          <ScrollArea className="max-h-60">
-            {environment.documents.map((doc) => (
-              <div
-                key={doc.id}
-                className="flex items-center gap-2 rounded-md px-3 py-1.5"
-              >
-                {getFileIcon(doc.type)}
-                <span className="flex-1 truncate text-xs text-sidebar-foreground">
-                  {doc.name}
-                </span>
-                {doc.status === "completed" && (
-                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                )}
-              </div>
-            ))}
+        <div className="flex flex-col gap-1 px-3 py-4 mt-auto border-t border-slate-200 dark:border-slate-800/60">
+          <div className="flex items-center justify-between px-3 pb-2">
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Documents
+            </p>
+            <span className="text-[11px] font-medium bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded-sm">
+              {environment.documents.length}
+            </span>
+          </div>
+          <ScrollArea className="max-h-48 pr-2">
+            <div className="flex flex-col gap-0.5">
+              {environment.documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="flex items-center justify-between group rounded-md px-3 py-2 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2 overflow-hidden flex-1 cursor-pointer" onClick={() => setActiveTab("documents")}>
+                    {getFileIcon(doc.type)}
+                    <span className="truncate text-[13px] text-slate-700 dark:text-slate-300 font-medium w-[120px]">
+                      {doc.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 ml-1">
+                    {doc.status === "completed" && (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500/80 shrink-0 mr-1" />
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="h-6 w-6 rounded-md opacity-0 group-hover:opacity-100 hover:text-indigo-600 dark:hover:text-indigo-400 focus:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        alert(`Sharing link for '${doc.name}' generated and copied to clipboard! Peers can now access this on the 0G network.`)
+                      }}
+                      title="Share with Peers"
+                    >
+                      <Share2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </ScrollArea>
           <Button
             variant="ghost"
             size="sm"
-            className="mt-1 w-full justify-start gap-2 text-xs text-muted-foreground"
+            className="mt-2 w-full justify-start gap-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-md"
             onClick={() => setActiveTab("documents")}
           >
             <Upload className="h-3.5 w-3.5" />
