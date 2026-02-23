@@ -4,12 +4,43 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Wallet, Mail } from "lucide-react"
 import { Logo } from "@/components/logo"
+import { ethers } from 'ethers';
+import { useState } from 'react';
 
 interface AuthScreenProps {
-  onConnect: () => void
+  onConnect: (signer: ethers.Signer) => void
 }
 
 export function AuthScreen({ onConnect }: AuthScreenProps) {
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  const handleWalletConnect = async () => {
+    // 1. Check if MetaMask (or any EIP-1193 wallet) is installed
+    if (typeof (window as any).ethereum === 'undefined') {
+      alert("No wallet detected! Please install MetaMask or OKX Wallet.");
+      return;
+    }
+
+    try {
+      setIsConnecting(true);
+
+      // 2. Initialize the Ethers provider (the bridge to the blockchain)
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+
+      // 3. Request the user to share their address
+      const signer = await provider.getSigner();
+
+      // 4. Send the signer back to your main App state
+      onConnect(signer);
+
+      console.log("Wallet Connected Successfully!");
+    } catch (error) {
+      console.error("Connection failed:", error);
+      alert("Failed to connect wallet. Did you reject the request?");
+    } finally {
+      setIsConnecting(false);
+    }
+  };
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#FAFAFA] dark:bg-[#0A0A0A] px-4 selection:bg-indigo-500/30">
       <div className="flex w-full max-w-[420px] flex-col items-center gap-10">
@@ -38,17 +69,21 @@ export function AuthScreen({ onConnect }: AuthScreenProps) {
             <Button
               size="lg"
               className="w-full justify-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all rounded-lg font-medium"
-              onClick={onConnect}
+              onClick={handleWalletConnect}
+              disabled={isConnecting}
             >
-              MetaMask
+              {isConnecting ? "Connecting..." : "MetaMask"}
+              {/* MetaMask */}
             </Button>
 
             <Button
               size="lg"
               className="w-full justify-center gap-2.5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700 shadow-sm transition-all rounded-lg font-medium"
-              onClick={onConnect}
+              onClick={handleWalletConnect}
+              disabled={isConnecting}
             >
-              OKX Wallet
+              {isConnecting ? "Connecting..." : "OKX Wallet"}
+              {/* OKX Wallet */}
             </Button>
 
             <div className="relative py-2">

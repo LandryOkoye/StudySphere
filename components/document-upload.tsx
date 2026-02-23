@@ -7,18 +7,72 @@ import { Input } from "@/components/ui/input"
 import { Upload, FileText, Image, FileIcon, CheckCircle2, Loader2, Globe, HardDrive, Link as LinkIcon } from "lucide-react"
 import type { Document } from "@/lib/store"
 import { cn } from "@/lib/utils"
+import { uploadTo0G } from '@/lib/0g-storage';
+import { ethers } from 'ethers';
+
+
 
 interface DocumentUploadProps {
   documents: Document[]
   onUpload: (files: Document[]) => void
+  signer: ethers.Signer | null
 }
 
 type TabType = "local" | "drive" | "web"
 
-export function DocumentUpload({ documents, onUpload }: DocumentUploadProps) {
+export function DocumentUpload({ documents, onUpload, signer }: DocumentUploadProps) {
   const [activeTab, setActiveTab] = useState<TabType>("local")
   const [isDragging, setIsDragging] = useState(false)
   const [urlInput, setUrlInput] = useState("")
+
+  const perform0GUpload = async (file: File) => {
+    if (!signer) {
+      alert("Please connect your wallet in the Auth screen first!");
+      return;
+    }
+
+    // 1. Create the UI entry for the document
+    const fileType: Document["type"] = file.type.includes("pdf")
+      ? "pdf"
+      : file.type.includes("image")
+        ? "image"
+        : "note";
+    const newDoc: Document = {
+      id: `doc-${Date.now()}`,
+      name: file.name,
+      type: fileType,
+      status: "uploading",
+      progress: 10, // Start with a little progress
+    };
+
+    // Add the doc to the UI list
+    onUpload([newDoc]);
+
+    try {
+      // 2. Call our 0G library function
+      // This will trigger the MetaMask popup
+      const result = await uploadTo0G(file, signer);
+
+      // 3. Update UI to "Processing" (Syncing with nodes)
+      onUpload([{ ...newDoc, status: "processing", progress: 80 }]);
+
+      // 4. Finalize as "Completed"
+      onUpload([{
+        ...newDoc,
+        status: "completed",
+        progress: 100,
+        // Optional: you could store the rootHash in the doc object if your store supports it
+      }]);
+
+      console.log("0G Upload Finished. Root Hash:", result.rootHash);
+
+    } catch (error) {
+      console.error("0G Upload Failed:", error);
+      alert("Upload failed. Make sure you have A0GI testnet tokens.");
+      // Update UI to show error (if your store supports an 'error' status)
+      onUpload([{ ...newDoc, status: "uploading", progress: 0 }]);
+    }
+  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -32,13 +86,16 @@ export function DocumentUpload({ documents, onUpload }: DocumentUploadProps) {
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
-      e.preventDefault()
-      setIsDragging(false)
-      simulateUpload("local", "New Document.pdf", "pdf")
+      e.preventDefault();
+      setIsDragging(false);
+
+      const file = e.dataTransfer.files?.[0]; // Grab the actual dropped file
+      if (file) {
+        perform0GUpload(file);
+      }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  )
+    [signer, onUpload] // Add dependencies
+  );
 
   function simulateUpload(source: string, filename: string, type: Document["type"]) {
     const newDoc: Document = {
