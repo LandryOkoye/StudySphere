@@ -11,7 +11,9 @@ export async function POST(req: Request) {
 
         // Initialize Broker
         const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_0G_EVM_RPC!);
-        const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
+        let pk = (process.env.PRIVATE_KEY || "").trim();
+        if (!pk.startsWith("0x")) pk = "0x" + pk;
+        const wallet = new ethers.Wallet(pk, provider);
         const broker = await createZGComputeNetworkBroker(wallet);
 
         // Discover chatbot services
@@ -24,6 +26,14 @@ export async function POST(req: Request) {
 
         // Pick the first available chatbot provider
         const providerAddress = chatbotServices[0].provider;
+
+        // Auto-initialize Account & Funds for this specific Provider Node
+        try {
+            await broker.ledger.depositFund(0.2);
+            await broker.ledger.transferFund(providerAddress, 'inference', ethers.parseEther("0.05"));
+        } catch (e: any) {
+            console.log("Account already funded or error funding:", e.message);
+        }
 
         // Acknowledge Provider Signer (Required before first use)
         try {
@@ -61,15 +71,18 @@ export async function POST(req: Request) {
             throw new Error(`0G Compute Provider returned status: ${response.status} - ${errBody}`);
         }
 
-        const data = await response.json();
+        const rawData = await response.text();
+        console.log("Raw 0G Compute Response:", rawData);
+
+        const data = JSON.parse(rawData);
         const outputText = data.choices?.[0]?.message?.content || "No response generated.";
 
         return NextResponse.json({ text: outputText });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("0G Compute Error:", error);
         return NextResponse.json(
-            { error: "Failed to connect to 0G Compute network or perform inference." },
+            { error: "Failed to connect to 0G Compute network or perform inference.", details: error.message || error.toString() },
             { status: 500 }
         );
     }

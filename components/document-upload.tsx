@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
@@ -24,6 +24,15 @@ export function DocumentUpload({ documents, onUpload, signer }: DocumentUploadPr
   const [activeTab, setActiveTab] = useState<TabType>("local")
   const [isDragging, setIsDragging] = useState(false)
   const [urlInput, setUrlInput] = useState("")
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      perform0GUpload(file)
+    }
+  }
 
   const perform0GUpload = async (file: File) => {
     if (!signer) {
@@ -221,11 +230,18 @@ export function DocumentUpload({ documents, onUpload, signer }: DocumentUploadPr
                 Drag and drop PDFs, DOCX, Images, or Notes here.
               </p>
             </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileSelect}
+              accept=".pdf,.docx,.png,.jpg,.jpeg,.txt"
+            />
             <Button
               variant="outline"
               size="sm"
               className="mt-2 text-xs h-8 bg-white dark:bg-[#111]"
-              onClick={() => simulateUpload("local", "Local_Document.pdf", "pdf")}
+              onClick={() => fileInputRef.current?.click()}
             >
               Browse Files
             </Button>
