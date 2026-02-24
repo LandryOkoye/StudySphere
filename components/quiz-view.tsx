@@ -8,21 +8,53 @@ import { Label } from "@/components/ui/label"
 import { ArrowLeft, CheckCircle2, XCircle, ArrowRight } from "lucide-react"
 import type { QuizQuestion } from "@/lib/store"
 import { cn } from "@/lib/utils"
+import { Loader2 } from "lucide-react"
+import { ethers } from "ethers"
+import contractData from "@/lib/contractData.json"
 
 interface QuizViewProps {
   questions: QuizQuestion[]
   environmentName: string
+  environmentId: string
   onBack: () => void
+  signer: any
 }
 
-export function QuizView({ questions, environmentName, onBack }: QuizViewProps) {
+export function QuizView({ questions, environmentName, environmentId, onBack, signer }: QuizViewProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedOption, setSelectedOption] = useState<string | undefined>(undefined)
   const [hasAnswered, setHasAnswered] = useState(false)
   const [score, setScore] = useState(0)
   const [completed, setCompleted] = useState(false)
+  const [isLoggingScore, setIsLoggingScore] = useState(false)
 
   const question = questions[currentIndex]
+
+  async function handleLogScore() {
+    if (!signer) {
+      alert("Please connect your wallet first! You can do this by returning to the auth screen.")
+      return
+    }
+
+    setIsLoggingScore(true)
+    try {
+      const contract = new ethers.Contract(
+        contractData.address,
+        contractData.abi,
+        signer
+      )
+
+      // The smart contract takes: recordQuizScore(string memory environmentId, uint8 score)
+      const tx = await contract.recordQuizScore(environmentId, score)
+      await tx.wait()
+      alert("Verification Success: Score successfully logged on the 0G Network!")
+    } catch (error) {
+      console.error("Smart Contract Interaction Error:", error)
+      alert("Failed to log score. Make sure you are connected to the Newton (0G) testnet with funds.")
+    } finally {
+      setIsLoggingScore(false)
+    }
+  }
 
   function handleSubmit() {
     if (selectedOption === undefined) return
@@ -74,11 +106,15 @@ export function QuizView({ questions, environmentName, onBack }: QuizViewProps) 
           </p>
         </div>
         <div className="flex gap-3 mt-4">
-          <Button variant="outline" onClick={onBack} className="bg-white dark:bg-[#111]">
+          <Button variant="outline" onClick={onBack} disabled={isLoggingScore} className="bg-white dark:bg-[#111]">
             Back to Workspace
           </Button>
-          <Button onClick={handleRestart} className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
+          <Button onClick={handleRestart} disabled={isLoggingScore} className="bg-slate-200 text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">
             Try Again
+          </Button>
+          <Button onClick={handleLogScore} disabled={isLoggingScore} className="bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 flex items-center gap-2">
+            {isLoggingScore && <Loader2 className="h-4 w-4 animate-spin" />}
+            Log Score On-Chain
           </Button>
         </div>
       </div>

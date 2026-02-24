@@ -28,6 +28,7 @@ interface WorkspaceProps {
   onUpdateEnvironment: (env: Environment) => void
   onOpenQuiz: () => void
   onOpenFlashcards: () => void
+  signer: any
 }
 
 export function Workspace({
@@ -36,28 +37,66 @@ export function Workspace({
   onUpdateEnvironment,
   onOpenQuiz,
   onOpenFlashcards,
+  signer,
 }: WorkspaceProps) {
   const [activeTab, setActiveTab] = useState<SidebarTab>("chat")
+  const [isChatLoading, setIsChatLoading] = useState(false)
 
-  function handleSendMessage(content: string) {
+  async function handleSendMessage(content: string) {
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
       role: "user",
       content,
     }
 
-    // Simulate AI response
-    const aiResponse: Message = {
-      id: `msg-${Date.now() + 1}`,
-      role: "ai",
-      content: generateAIResponse(content),
-    }
-
+    const newMessages = [...environment.messages, userMessage]
     onUpdateEnvironment({
       ...environment,
-      messages: [...environment.messages, userMessage, aiResponse],
+      messages: newMessages,
       lastActivity: "Just now",
     })
+
+    setIsChatLoading(true)
+    try {
+      const rootHashes = environment.documents.map(d => d.rootHash).filter(Boolean)
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: content,
+          environmentHashes: rootHashes,
+          useWebSearch: false // Could hook to a UI toggle later
+        })
+      })
+
+      const data = await res.json()
+
+      const aiResponse: Message = {
+        id: `msg-${Date.now() + 1}`,
+        role: "ai",
+        content: data.text || "Error retrieving response"
+      }
+
+      onUpdateEnvironment({
+        ...environment,
+        messages: [...newMessages, aiResponse],
+        lastActivity: "Just now",
+      })
+    } catch (error) {
+      const aiResponse: Message = {
+        id: `msg-${Date.now() + 1}`,
+        role: "ai",
+        content: "Sorry, I had trouble connecting to the 0G Compute Network."
+      }
+      onUpdateEnvironment({
+        ...environment,
+        messages: [...newMessages, aiResponse],
+        lastActivity: "Just now",
+      })
+    } finally {
+      setIsChatLoading(false)
+    }
   }
 
   function handleUpload(newDocs: Document[]) {
@@ -207,6 +246,7 @@ export function Workspace({
             onSendMessage={handleSendMessage}
             onQuickAction={handleQuickAction}
             environmentName={environment.name}
+            isLoading={isChatLoading}
           />
         )}
 
@@ -221,6 +261,7 @@ export function Workspace({
             <DocumentUpload
               documents={environment.documents}
               onUpload={handleUpload}
+              signer={signer}
             />
           </div>
         )}

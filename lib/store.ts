@@ -6,6 +6,7 @@ export interface Document {
   type: "pdf" | "image" | "note"
   status: "idle" | "uploading" | "processing" | "completed"
   progress: number
+  rootHash?: string
 }
 
 export interface Message {

@@ -14,29 +14,50 @@ interface AuthScreenProps {
 export function AuthScreen({ onConnect }: AuthScreenProps) {
   const [isConnecting, setIsConnecting] = useState(false);
 
-  const handleWalletConnect = async () => {
-    // 1. Check if MetaMask (or any EIP-1193 wallet) is installed
-    if (typeof (window as any).ethereum === 'undefined') {
-      alert("No wallet detected! Please install MetaMask or OKX Wallet.");
+  const connectMetaMask = async () => {
+    let providerSource = (window as any).ethereum;
+
+    // Handle wallets that inject an array of providers (e.g., when both MM and OKX are installed)
+    if (providerSource?.providers) {
+      providerSource = providerSource.providers.find((p: any) => p.isMetaMask) || providerSource;
+    }
+
+    if (!providerSource || !providerSource.isMetaMask) {
+      alert("MetaMask not detected! Please install MetaMask.");
       return;
     }
 
     try {
       setIsConnecting(true);
-
-      // 2. Initialize the Ethers provider (the bridge to the blockchain)
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
-
-      // 3. Request the user to share their address
+      const provider = new ethers.BrowserProvider(providerSource);
       const signer = await provider.getSigner();
-
-      // 4. Send the signer back to your main App state
       onConnect(signer);
-
-      console.log("Wallet Connected Successfully!");
+      console.log("MetaMask Connected Successfully!");
     } catch (error) {
-      console.error("Connection failed:", error);
-      alert("Failed to connect wallet. Did you reject the request?");
+      console.error("MetaMask Connection failed:", error);
+      alert("Failed to connect MetaMask. Did you reject the request?");
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const connectOKX = async () => {
+    let providerSource = (window as any).okxwallet;
+
+    if (!providerSource) {
+      alert("OKX Wallet not detected! Please install OKX Wallet.");
+      return;
+    }
+
+    try {
+      setIsConnecting(true);
+      const provider = new ethers.BrowserProvider(providerSource);
+      const signer = await provider.getSigner();
+      onConnect(signer);
+      console.log("OKX Wallet Connected Successfully!");
+    } catch (error) {
+      console.error("OKX Connection failed:", error);
+      alert("Failed to connect OKX Wallet. Did you reject the request?");
     } finally {
       setIsConnecting(false);
     }
@@ -69,21 +90,19 @@ export function AuthScreen({ onConnect }: AuthScreenProps) {
             <Button
               size="lg"
               className="w-full justify-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all rounded-lg font-medium"
-              onClick={handleWalletConnect}
+              onClick={connectMetaMask}
               disabled={isConnecting}
             >
               {isConnecting ? "Connecting..." : "MetaMask"}
-              {/* MetaMask */}
             </Button>
 
             <Button
               size="lg"
               className="w-full justify-center gap-2.5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700 shadow-sm transition-all rounded-lg font-medium"
-              onClick={handleWalletConnect}
+              onClick={connectOKX}
               disabled={isConnecting}
             >
               {isConnecting ? "Connecting..." : "OKX Wallet"}
-              {/* OKX Wallet */}
             </Button>
 
             <div className="relative py-2">
@@ -101,7 +120,7 @@ export function AuthScreen({ onConnect }: AuthScreenProps) {
               variant="outline"
               size="lg"
               className="w-full gap-2.5 bg-transparent border-slate-200 hover:bg-slate-50 text-slate-700 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800/50 shadow-sm transition-all rounded-lg font-medium"
-              onClick={onConnect}
+              onClick={() => { }}
             >
               <Mail className="h-4 w-4" />
               Continue with Email

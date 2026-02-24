@@ -51,17 +51,20 @@ export function DocumentUpload({ documents, onUpload, signer }: DocumentUploadPr
     try {
       // 2. Call our 0G library function
       // This will trigger the MetaMask popup
-      const result = await uploadTo0G(file, signer);
-
-      // 3. Update UI to "Processing" (Syncing with nodes)
-      onUpload([{ ...newDoc, status: "processing", progress: 80 }]);
+      const result = await uploadTo0G(file, signer, (progress, stage) => {
+        onUpload([{
+          ...newDoc,
+          status: progress < 50 ? "uploading" : "processing",
+          progress
+        }]);
+      });
 
       // 4. Finalize as "Completed"
       onUpload([{
         ...newDoc,
         status: "completed",
         progress: 100,
-        // Optional: you could store the rootHash in the doc object if your store supports it
+        rootHash: result.rootHash || undefined
       }]);
 
       console.log("0G Upload Finished. Root Hash:", result.rootHash);

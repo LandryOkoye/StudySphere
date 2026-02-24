@@ -19,6 +19,7 @@ interface AIChatProps {
   onSendMessage: (content: string) => void
   onQuickAction: (action: "summarize" | "quiz" | "flashcards") => void
   environmentName: string
+  isLoading?: boolean
 }
 
 export function AIChat({
@@ -26,6 +27,7 @@ export function AIChat({
   onSendMessage,
   onQuickAction,
   environmentName,
+  isLoading,
 }: AIChatProps) {
   const [inputValue, setInputValue] = useState("")
   const [webSearchEnabled, setWebSearchEnabled] = useState(false)
@@ -227,6 +229,24 @@ export function AIChat({
                 </div>
               </div>
             ))}
+
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="flex-shrink-0 mr-4 mt-1">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600/10 border border-indigo-600/20 text-indigo-600">
+                    <Sparkles className="h-4 w-4 animate-pulse" />
+                  </div>
+                </div>
+                <div className="max-w-[85%] sm:max-w-[75%] rounded-2xl px-5 py-3.5 shadow-sm bg-white text-slate-900 dark:bg-[#111] dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-tl-sm">
+                  <span className="text-[13px] leading-relaxed flex gap-1">
+                    <span className="animate-bounce delay-75">.</span>
+                    <span className="animate-bounce delay-150">.</span>
+                    <span className="animate-bounce delay-300">.</span>
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Invisible div to scroll to */}
             <div ref={messagesEndRef} className="h-4 w-full shrink-0" />
           </div>
@@ -242,8 +262,9 @@ export function AIChat({
             value={inputValue}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder="Ask anything, or type '/' to search the web…"
-            className="flex-1 resize-none bg-transparent text-[14px] outline-none placeholder:text-slate-400 leading-relaxed px-2 py-1 max-h-[150px] overflow-y-auto text-slate-900 dark:text-slate-100"
+            disabled={isLoading}
+            placeholder={isLoading ? "AI is thinking..." : "Ask anything, or type '/' to search the web…"}
+            className="flex-1 resize-none bg-transparent text-[14px] outline-none placeholder:text-slate-400 leading-relaxed px-2 py-1 max-h-[150px] overflow-y-auto text-slate-900 dark:text-slate-100 disabled:opacity-50"
           />
 
           <div className="flex items-center justify-between pt-2 px-1">
@@ -295,10 +316,10 @@ export function AIChat({
             <Button
               size="icon-sm"
               onClick={handleSend}
-              disabled={!inputValue.trim()}
+              disabled={!inputValue.trim() || isLoading}
               className={cn(
                 "shrink-0 h-8 w-8 rounded-lg transition-all",
-                inputValue.trim()
+                inputValue.trim() && !isLoading
                   ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
                   : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600"
               )}

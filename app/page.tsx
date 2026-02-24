@@ -20,15 +20,26 @@ export default function Page() {
   const [view, setView] = useState<View>("landing")
   const [environments, setEnvironments] = useState<Environment[]>(sampleEnvironments)
   const [activeEnvId, setActiveEnvId] = useState<string | null>(null)
-  const walletAddress = "0x1a2B3c4D5e6F7890aBcDeF1234567890AbCdEf12"
+  const [walletAddress, setWalletAddress] = useState<string>("0x1a2B3c4D5e6F7890aBcDeF1234567890AbCdEf12")
+  const [signer, setSigner] = useState<any>(null) // Using any to avoid importing ethers here, or could import it.
 
   const activeEnvironment = environments.find((e) => e.id === activeEnvId) || null
 
-  function handleConnect() {
-    setView("dashboard")
+  async function handleConnect(newSigner: any) {
+    try {
+      const address = await newSigner.getAddress()
+      setWalletAddress(address)
+      setSigner(newSigner)
+      setView("dashboard")
+    } catch (error) {
+      console.error(error)
+      setView("dashboard") // Fallback
+    }
   }
 
   function handleDisconnect() {
+    setSigner(null)
+    setWalletAddress("0x1a2B3c4D5e6F7890aBcDeF1234567890AbCdEf12") // Reset to mock or empty
     setView("auth")
     setActiveEnvId(null)
   }
@@ -92,7 +103,9 @@ export default function Page() {
         <QuizView
           questions={activeEnvironment.quiz}
           environmentName={activeEnvironment.name}
+          environmentId={activeEnvironment.id}
           onBack={handleBackToWorkspace}
+          signer={signer}
         />
       </div>
     )
@@ -123,6 +136,7 @@ export default function Page() {
           onUpdateEnvironment={handleUpdateEnvironment}
           onOpenQuiz={() => setView("quiz")}
           onOpenFlashcards={() => setView("flashcards")}
+          signer={signer}
         />
       </div>
     )
