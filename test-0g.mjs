@@ -52,6 +52,9 @@ async function main() {
         console.log("Headers:", Object.keys(headers));
 
         console.log("Sending Inference Request...");
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
         const response = await fetch(`${meta.endpoint}/chat/completions`, {
             method: "POST",
             headers: {
@@ -61,8 +64,10 @@ async function main() {
             body: JSON.stringify({
                 model: meta.model,
                 messages: [{ role: "user", content: "Hello!" }]
-            })
+            }),
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         const rawText = await response.text();
         console.log("Status:", response.status);
