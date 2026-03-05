@@ -30,7 +30,9 @@ export function ProfileView({ walletAddress, onBack }: ProfileViewProps) {
                         </div>
                         <div className="flex flex-col gap-2 mt-2">
                             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Active Wallet</p>
-                            <p className="font-mono bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg text-slate-900 dark:text-slate-50 tracking-wide text-[15px] break-all">{walletAddress}</p>
+                            <p className="font-mono bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg text-slate-900 dark:text-slate-50 tracking-wide text-[15px] break-all">
+                                {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                            </p>
                         </div>
                     </div>
 
@@ -66,12 +68,12 @@ export function ProfileView({ walletAddress, onBack }: ProfileViewProps) {
                         </div>
                     </div>
 
-                    <div className="mt-4 flex flex-col sm:flex-row items-center justify-between p-6 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
+                    <div className="mt-4 flex flex-col sm:flex-row items-center justify-between p-6 rounded-2xl bg-white dark:bg-[#111] border border-slate-200 dark:border-slate-800 shadow-sm">
                         <div className="flex flex-col gap-1 text-center sm:text-left">
-                            <h3 className="text-lg font-bold">Performance Result</h3>
-                            <p className="text-indigo-100 font-medium text-sm">You are in the top 15% of active learners this week!</p>
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Performance Result</h3>
+                            <p className="font-medium text-sm text-slate-500 dark:text-slate-400">You are in the top 15% of active learners this week!</p>
                         </div>
-                        <div className="mt-4 sm:mt-0 px-4 py-2 bg-white/20 rounded-xl backdrop-blur-sm border border-white/20 font-bold tracking-wide">
+                        <div className="mt-4 sm:mt-0 px-4 py-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 rounded-xl font-bold tracking-wide text-sm">
                             A- TIER
                         </div>
                     </div>

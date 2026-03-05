@@ -28,6 +28,12 @@ export interface Flashcard {
   back: string
 }
 
+export interface WebClip {
+  id: string
+  url: string
+  title: string
+}
+
 export interface Environment {
   id: string
   name: string
@@ -35,6 +41,7 @@ export interface Environment {
   messages: Message[]
   quiz: QuizQuestion[]
   flashcards: Flashcard[]
+  webClips?: WebClip[]
   lastActivity: string
 }
 
@@ -82,6 +89,7 @@ export const sampleEnvironments: Environment[] = [
       { id: "fc-2", front: "What does the Golgi apparatus do?", back: "The Golgi apparatus modifies, packages, and ships proteins and lipids to their final destinations." },
       { id: "fc-3", front: "Define osmosis", back: "Osmosis is the movement of water molecules through a selectively permeable membrane from an area of lower solute concentration to higher solute concentration." },
     ],
+    webClips: [],
     lastActivity: "2 hours ago",
   },
   {
@@ -94,6 +102,7 @@ export const sampleEnvironments: Environment[] = [
     messages: [],
     quiz: [],
     flashcards: [],
+    webClips: [],
     lastActivity: "1 day ago",
   },
   {
@@ -105,6 +114,7 @@ export const sampleEnvironments: Environment[] = [
     messages: [],
     quiz: [],
     flashcards: [],
+    webClips: [],
     lastActivity: "3 days ago",
   },
 ]

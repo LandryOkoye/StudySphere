@@ -20,6 +20,9 @@ interface AIChatProps {
   onQuickAction: (action: "summarize" | "quiz" | "flashcards") => void
   environmentName: string
   isLoading?: boolean
+  documentCount?: number
+  quizCount?: number
+  webClipCount?: number
 }
 
 export function AIChat({
@@ -28,6 +31,9 @@ export function AIChat({
   onQuickAction,
   environmentName,
   isLoading,
+  documentCount = 0,
+  quizCount = 0,
+  webClipCount = 0,
 }: AIChatProps) {
   const [inputValue, setInputValue] = useState("")
   const [webSearchEnabled, setWebSearchEnabled] = useState(false)
@@ -136,21 +142,27 @@ export function AIChat({
                     <FileText className="h-4 w-4" />
                     <span className="text-xs font-medium uppercase tracking-wider">Documents</span>
                   </div>
-                  <span className="text-xl font-semibold text-slate-900 dark:text-slate-100">12 Processed</span>
+                  <span className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                    {documentCount === 0 ? "0 documents" : `${documentCount} Processed`}
+                  </span>
                 </div>
                 <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-[#FAFAFA] dark:bg-[#111]">
                   <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
                     <CheckCircle2 className="h-4 w-4" />
                     <span className="text-xs font-medium uppercase tracking-wider">Quizzes</span>
                   </div>
-                  <span className="text-xl font-semibold text-slate-900 dark:text-slate-100">4 Mastered</span>
+                  <span className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                    {quizCount === 0 ? "0 quizzes mastered" : `${quizCount} Mastered`}
+                  </span>
                 </div>
                 <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-[#FAFAFA] dark:bg-[#111]">
                   <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
                     <Globe className="h-4 w-4" />
                     <span className="text-xs font-medium uppercase tracking-wider">Web Context</span>
                   </div>
-                  <span className="text-xl font-semibold text-slate-900 dark:text-slate-100">8 Web Clips</span>
+                  <span className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                    {webClipCount === 0 ? "0 web clips" : `${webClipCount} Web Clip${webClipCount === 1 ? '' : 's'}`}
+                  </span>
                 </div>
               </div>
 

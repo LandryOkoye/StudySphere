@@ -17,6 +17,7 @@ import {
   File,
   CheckCircle2,
   Share2,
+  Trash2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -114,6 +115,21 @@ export function Workspace({
     })
   }
 
+  function handleDeleteDocument(e: React.MouseEvent, documentId: string) {
+    e.stopPropagation()
+    const docToDelete = environment.documents.find(d => d.id === documentId)
+    if (!docToDelete) return
+
+    if (window.confirm(`Are you sure you want to delete "${docToDelete.name}"?`)) {
+      const updatedDocs = environment.documents.filter((doc) => doc.id !== documentId)
+      onUpdateEnvironment({
+        ...environment,
+        documents: updatedDocs,
+        lastActivity: "Just now",
+      })
+    }
+  }
+
   function handleQuickAction(action: "summarize" | "quiz" | "flashcards") {
     if (action === "quiz") {
       onOpenQuiz()
@@ -197,15 +213,15 @@ export function Workspace({
               {environment.documents.map((doc) => (
                 <div
                   key={doc.id}
-                  className="flex items-center justify-between group rounded-md px-3 py-2 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors"
+                  className="flex items-center justify-between group rounded-md px-2 py-2 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors"
                 >
                   <div className="flex items-center gap-2 overflow-hidden flex-1 cursor-pointer" onClick={() => setActiveTab("documents")}>
                     {getFileIcon(doc.type)}
-                    <span className="truncate text-[13px] text-slate-700 dark:text-slate-300 font-medium w-[120px]">
+                    <span className="truncate text-[13px] text-slate-700 dark:text-slate-300 font-medium max-w-[100px]">
                       {doc.name}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0 ml-1">
+                  <div className="flex items-center gap-0.5 shrink-0 ml-1">
                     {doc.status === "completed" && (
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500/80 shrink-0 mr-1" />
                     )}
@@ -220,6 +236,15 @@ export function Workspace({
                       title="Share with Peers"
                     >
                       <Share2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="h-6 w-6 rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 focus:opacity-100 transition-all ml-1"
+                      onClick={(e) => handleDeleteDocument(e, doc.id)}
+                      title="Delete Document"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -247,6 +272,9 @@ export function Workspace({
             onQuickAction={handleQuickAction}
             environmentName={environment.name}
             isLoading={isChatLoading}
+            documentCount={environment.documents?.filter(d => d.status === "completed").length || 0}
+            quizCount={environment.quiz?.length || 0}
+            webClipCount={environment.webClips?.length || 0}
           />
         )}
 
@@ -261,6 +289,7 @@ export function Workspace({
             <DocumentUpload
               documents={environment.documents}
               onUpload={handleUpload}
+              onDelete={(id) => handleDeleteDocument({ stopPropagation: () => { } } as React.MouseEvent, id)}
               signer={signer}
             />
           </div>

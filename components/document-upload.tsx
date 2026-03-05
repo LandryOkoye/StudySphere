@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
-import { Upload, FileText, Image, FileIcon, CheckCircle2, Loader2, Globe, HardDrive, Link as LinkIcon } from "lucide-react"
+import { Upload, FileText, Image, FileIcon, CheckCircle2, Loader2, Globe, HardDrive, Link as LinkIcon, Trash2 } from "lucide-react"
 import type { Document } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { uploadTo0G } from '@/lib/0g-storage';
@@ -15,12 +15,13 @@ import { ethers } from 'ethers';
 interface DocumentUploadProps {
   documents: Document[]
   onUpload: (files: Document[]) => void
+  onDelete?: (documentId: string) => void
   signer: ethers.Signer | null
 }
 
 type TabType = "local" | "drive" | "web"
 
-export function DocumentUpload({ documents, onUpload, signer }: DocumentUploadProps) {
+export function DocumentUpload({ documents, onUpload, onDelete, signer }: DocumentUploadProps) {
   const [activeTab, setActiveTab] = useState<TabType>("local")
   const [isDragging, setIsDragging] = useState(false)
   const [urlInput, setUrlInput] = useState("")
@@ -330,8 +331,19 @@ export function DocumentUpload({ documents, onUpload, signer }: DocumentUploadPr
                   <span className="text-[10px] text-slate-500 dark:text-slate-400">Synced to 0G Storage</span>
                 )}
               </div>
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 flex items-center gap-2">
                 {getStatusIcon(doc.status)}
+                {onDelete && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => onDelete(doc.id)}
+                    className="h-6 w-6 rounded-md opacity-50 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 hover:opacity-100 transition-all"
+                    title="Delete Document"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
               </div>
             </div>
           ))}
